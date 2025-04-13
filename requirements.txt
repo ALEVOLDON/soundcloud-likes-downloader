@@ -1,0 +1,3 @@
+selenium>=4.0.0
+matplotlib>=3.5.0
+scdl>=2.7.3 
