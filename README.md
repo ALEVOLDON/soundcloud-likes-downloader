@@ -1,27 +1,27 @@
 # SoundCloud Likes Downloader 🎵
 
-Удобное приложение с графическим интерфейсом для скачивания лайкнутых треков с SoundCloud. 
+A convenient GUI application for downloading your liked tracks from SoundCloud.
 
-## Возможности 🚀
+## Features 🚀
 
-- Автоматический сбор ссылок с вашей страницы лайков
-- Умная фильтрация (пропускает миксы, подкасты и плейлисты)
-- Графический интерфейс с прогрессом загрузки
-- Визуализация скорости скачивания
-- Сохранение всех треков в отдельную папку
-- Логирование процесса и ошибок
-- Возможность остановки загрузки в любой момент
+- Automatic collection of links from your likes page
+- Smart filtering (skips mixes, podcasts, and playlists)
+- Graphical interface with download progress
+- Download speed visualization
+- Saves all tracks in a dedicated folder
+- Process and error logging
+- Ability to stop downloading at any time
 
-## Установка 🔧
+## Installation 🔧
 
-1. Убедитесь, что у вас установлен Python 3.7 или выше
-2. Склонируйте репозиторий:
+1. Make sure you have Python 3.7 or higher installed
+2. Clone the repository:
 ```bash
 git clone https://github.com/ALEVOLDON/soundcloud-likes-downloader.git
 cd soundcloud-likes-downloader
 ```
 
-3. Создайте виртуальное окружение и активируйте его:
+3. Create and activate virtual environment:
 ```bash
 python -m venv .venv
 # Windows
@@ -30,34 +30,34 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-4. Установите зависимости:
+4. Install dependencies:
 ```bash
 pip install selenium matplotlib scdl
 ```
 
-5. Установите Chrome WebDriver:
-   - Скачайте [ChromeDriver](https://sites.google.com/chromium.org/driver/) для вашей версии Chrome
-   - Добавьте его в PATH или положите в папку проекта
+5. Install Chrome WebDriver:
+   - Download [ChromeDriver](https://sites.google.com/chromium.org/driver/) for your Chrome version
+   - Add it to PATH or place it in the project folder
 
-## Использование 💻
+## Usage 💻
 
-1. Откройте файл `soundcloud_likes_downloader.py` и замените URL в переменной `LIKES_URL` на ваш URL страницы лайков SoundCloud:
+1. Open `soundcloud_likes_downloader.py` and replace the URL in the `LIKES_URL` variable with your SoundCloud likes page URL:
 ```python
 LIKES_URL = "https://soundcloud.com/your-username/likes"
 ```
 
-2. Запустите программу:
+2. Run the program:
 ```bash
 python soundcloud_likes_downloader.py
 ```
 
-3. В открывшемся окне нажмите "▶ Начать загрузку"
-4. Следите за прогрессом в интерфейсе
-5. Все скачанные треки будут находиться в папке `downloads`
+3. Click "▶ Start Download" in the opened window
+4. Monitor progress in the interface
+5. All downloaded tracks will be in the `downloads` folder
 
-## Настройка фильтров 🔍
+## Filter Settings 🔍
 
-Вы можете настроить какие треки пропускать, отредактировав список `EXCLUDE_KEYWORDS` в файле `soundcloud_likes_downloader.py`:
+You can customize which tracks to skip by editing the `EXCLUDE_KEYWORDS` list in `soundcloud_likes_downloader.py`:
 
 ```python
 EXCLUDE_KEYWORDS = [
@@ -66,29 +66,29 @@ EXCLUDE_KEYWORDS = [
 ]
 ```
 
-## Требования 📋
+## Requirements 📋
 
 - Python 3.7+
-- Chrome браузер
+- Chrome browser
 - ChromeDriver
-- Доступ к интернету
-- Достаточно места на диске для скачивания треков
+- Internet access
+- Sufficient disk space for downloading tracks
 
-## Решение проблем ⚠️
+## Troubleshooting ⚠️
 
-1. Если возникает ошибка с ChromeDriver:
-   - Убедитесь, что версия ChromeDriver соответствует версии вашего Chrome
-   - Проверьте, что ChromeDriver доступен в PATH
+1. If you get a ChromeDriver error:
+   - Make sure ChromeDriver version matches your Chrome version
+   - Verify that ChromeDriver is available in PATH
 
-2. Если треки не скачиваются:
-   - Проверьте подключение к интернету
-   - Убедитесь, что трек доступен для скачивания на SoundCloud
-   - Проверьте логи в интерфейсе программы
+2. If tracks are not downloading:
+   - Check your internet connection
+   - Make sure the track is available for download on SoundCloud
+   - Check the logs in the interface
 
-## Лицензия 📄
+## License 📄
 
-MIT License - делайте что хотите, просто указывайте автора 😊
+MIT License - do whatever you want, just give credit 😊
 
-## Поддержка 💖
+## Support 💖
 
-Если у вас есть предложения по улучшению или вы нашли баг, создавайте Issue или Pull Request! 
+If you have suggestions for improvements or found a bug, create an Issue or Pull Request! 

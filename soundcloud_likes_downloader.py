@@ -16,7 +16,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 INPUT_FILE = "links.txt"
 OUTPUT_FILE = "filtered_links.txt"
-LIKES_URL = "https://soundcloud.com/g_t_w_y/likes"
+LIKES_URL = "https://soundcloud.com/your-username/likes"
 DOWNLOAD_DIR = "downloads"
 
 EXCLUDE_KEYWORDS = [
@@ -32,22 +32,22 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
     global stop_download
     stop_download = False
 
-    # Создаем папку downloads, если её нет
+    # Create downloads directory if it doesn't exist
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
-        log_callback(f"Создана папка {DOWNLOAD_DIR} для загрузки треков")
+        log_callback(f"Created {DOWNLOAD_DIR} directory for downloads")
 
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--disable-gpu")
     options.add_argument("--log-level=3")
 
-    log_callback("Запуск браузера и переход на страницу лайков...")
+    log_callback("Starting browser and navigating to likes page...")
     driver = webdriver.Chrome(options=options)
     driver.get(LIKES_URL)
     time.sleep(5)
 
-    log_callback("Прокрутка страницы для загрузки всех лайков...")
+    log_callback("Scrolling page to load all likes...")
     last_height = driver.execute_script("return document.body.scrollHeight")
     for _ in range(30):
         driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.END)
@@ -57,7 +57,7 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
             break
         last_height = new_height
 
-    log_callback("Сбор ссылок на треки...")
+    log_callback("Collecting track links...")
     a_tags = driver.find_elements(By.XPATH, "//a[contains(@href, '/')]")
     track_links = set()
     for tag in a_tags:
@@ -72,13 +72,13 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
     with open(INPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(sorted(track_links)))
 
-    log_callback(f"Найдено {len(track_links)} ссылок. Сохранено в {INPUT_FILE}")
+    log_callback(f"Found {len(track_links)} links. Saved to {INPUT_FILE}")
 
     filtered = []
     for link in track_links:
         lower_link = link.lower()
         if any(keyword in lower_link for keyword in EXCLUDE_KEYWORDS):
-            log_callback(f"Исключено: {link}")
+            log_callback(f"Excluded: {link}")
             continue
         filtered.append(link)
 
@@ -88,9 +88,9 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
     total = len(filtered)
     update_stats_callback(total, 0)
     percent = (total / len(track_links)) * 100 if track_links else 0
-    log_callback(f"\n📊 Статистика:\nВсего треков: {len(track_links)}\nПрошли фильтр: {total} ({percent:.1f}%)")
+    log_callback(f"\n📊 Statistics:\nTotal tracks: {len(track_links)}\nPassed filter: {total} ({percent:.1f}%)")
 
-    log_callback("\nНачинаю скачивание треков...")
+    log_callback("\nStarting track downloads...")
     downloaded = 0
     failed = []
     start_time = time.time()
@@ -100,18 +100,20 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
         links = f.readlines()
         for idx, link in enumerate(links):
             if stop_download:
-                log_callback("⛔️ Загрузка остановлена пользователем.")
+                log_callback("⛔️ Download stopped by user.")
                 break
 
             link = link.strip()
             if not link:
                 continue
-            log_callback(f"\n🎧 Скачивание: {link}")
+            log_callback(f"\n🎧 Downloading: {link}")
             try:
-                result = subprocess.run(["scdl", "-l", link, "-c", "--onlymp3", "-p", DOWNLOAD_DIR], capture_output=True, text=True, encoding="utf-8", errors="replace")
+                result = subprocess.run(["scdl", "-l", link, "-c", "--onlymp3", "-p", DOWNLOAD_DIR], 
+                                     capture_output=True, text=True, encoding="utf-8", errors="replace")
                 if result.returncode != 0:
                     log_callback(result.stderr)
-                    raise subprocess.CalledProcessError(result.returncode, result.args, output=result.stdout, stderr=result.stderr)
+                    raise subprocess.CalledProcessError(result.returncode, result.args, 
+                                                     output=result.stdout, stderr=result.stderr)
                 downloaded += 1
                 elapsed = time.time() - start_time
                 speed = downloaded / elapsed * 60 if elapsed else 0
@@ -122,12 +124,12 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
             except Exception as e:
                 failed.append(link)
                 update_errors_callback(len(failed))
-                log_callback(f"❌ Не удалось скачать: {link} — {e}")
+                log_callback(f"❌ Failed to download: {link} — {e}")
 
     if failed:
         with open("failed_links.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(failed))
-        log_callback(f"\n⚠️ Не удалось скачать {len(failed)} треков. Список сохранён в failed_links.txt")
+        log_callback(f"\n⚠️ Failed to download {len(failed)} tracks. List saved to failed_links.txt")
 
 
 def start_gui():
@@ -145,13 +147,14 @@ def start_gui():
     main_frame = ttk.Frame(root, padding=10)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    text_box = tk.Text(main_frame, height=20, wrap=tk.WORD, bg="#1e1e1e", fg="#e0e0e0", insertbackground="#ffffff", font=("Consolas", 10), relief=tk.FLAT)
+    text_box = tk.Text(main_frame, height=20, wrap=tk.WORD, bg="#1e1e1e", fg="#e0e0e0", 
+                      insertbackground="#ffffff", font=("Consolas", 10), relief=tk.FLAT)
     text_box.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-    stats_label = ttk.Label(main_frame, text="📦 Отфильтровано: 0 | 📥 Загружено: 0 | ❌ Ошибок: 0")
+    stats_label = ttk.Label(main_frame, text="📦 Filtered: 0 | 📥 Downloaded: 0 | ❌ Errors: 0")
     stats_label.pack(anchor=tk.W, pady=2)
 
-    progress_label = ttk.Label(main_frame, text="🔄 Прогресс: 0/0 | 🚀 Скорость: 0.00 треков/мин")
+    progress_label = ttk.Label(main_frame, text="🔄 Progress: 0/0 | 🚀 Speed: 0.00 tracks/min")
     progress_label.pack(anchor=tk.W, pady=2)
 
     fig, ax = plt.subplots(figsize=(6, 3))
@@ -166,30 +169,32 @@ def start_gui():
         text_box.see(tk.END)
 
     def update_stats(total, downloaded):
-        stats_label.config(text=f"📦 Отфильтровано: {total} | 📥 Загружено: {downloaded} | ❌ Ошибок: 0")
+        stats_label.config(text=f"📦 Filtered: {total} | 📥 Downloaded: {downloaded} | ❌ Errors: 0")
 
     def update_progress(current, total, speed):
-        progress_label.config(text=f"🔄 Прогресс: {current}/{total} | 🚀 Скорость: {speed:.2f} треков/мин")
+        progress_label.config(text=f"🔄 Progress: {current}/{total} | 🚀 Speed: {speed:.2f} tracks/min")
 
     def update_errors(error_count):
         current = stats_label.cget("text")
         parts = current.split("|")
         if len(parts) == 3:
-            stats_label.config(text=f"{parts[0].strip()} | {parts[1].strip()} | ❌ Ошибок: {error_count}")
+            stats_label.config(text=f"{parts[0].strip()} | {parts[1].strip()} | ❌ Errors: {error_count}")
 
     def update_chart(progress_data):
         ax.clear()
         ax.plot(progress_data, marker='o', linestyle='-', linewidth=2, color="#03dac6")
-        ax.set_title("📈 Прогресс загрузки", fontsize=12, color="#ffffff")
-        ax.set_xlabel("Итерация", color="#ffffff")
-        ax.set_ylabel("Скачано", color="#ffffff")
+        ax.set_title("📈 Download Progress", fontsize=12, color="#ffffff")
+        ax.set_xlabel("Iteration", color="#ffffff")
+        ax.set_ylabel("Downloaded", color="#ffffff")
         ax.tick_params(colors="#ffffff")
         ax.grid(True, color="#444444")
         chart_canvas.draw()
 
     def on_start():
         text_box.delete("1.0", tk.END)
-        threading.Thread(target=run_downloader, args=(log_callback, update_stats, update_progress, update_errors, update_chart), daemon=True).start()
+        threading.Thread(target=run_downloader, 
+                       args=(log_callback, update_stats, update_progress, update_errors, update_chart), 
+                       daemon=True).start()
 
     def on_stop():
         global stop_download
@@ -198,10 +203,10 @@ def start_gui():
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(pady=10)
 
-    start_button = ttk.Button(buttons_frame, text="▶ Начать загрузку", command=on_start)
+    start_button = ttk.Button(buttons_frame, text="▶ Start Download", command=on_start)
     start_button.pack(side=tk.LEFT, padx=5)
 
-    stop_button = ttk.Button(buttons_frame, text="⛔ Стоп", command=on_stop)
+    stop_button = ttk.Button(buttons_frame, text="⛔ Stop", command=on_stop)
     stop_button.pack(side=tk.LEFT, padx=5)
 
     root.mainloop()
