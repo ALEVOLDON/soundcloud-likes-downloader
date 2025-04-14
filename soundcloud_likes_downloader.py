@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# Imports
 import time
 import os
 import subprocess
@@ -15,20 +16,24 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import shutil
 
-INPUT_FILE = "links.txt"
-OUTPUT_FILE = "filtered_links.txt"
+# Constants
+INPUT_FILE = "links.txt"                 # Raw links from SoundCloud likes
+OUTPUT_FILE = "filtered_links.txt"       # Links after filtering unwanted content
 DEFAULT_LIKES_URL = "https://soundcloud.com/g_t_w_y/likes"
-DOWNLOAD_DIR = "downloads"
+DOWNLOAD_DIR = "downloads"               # Folder to store downloads
 
+# Keywords used to filter out unwanted tracks (e.g., DJ sets, podcasts, etc.)
 EXCLUDE_KEYWORDS = [
     "mix", "set", "podcast", "dj", "hour", "live", "sessions",
     "/sets/", "/likes/", "/reposts/", "playlist", "comments", "followers",
     "following", "/tags/"
 ]
 
+# Global state variables
 stop_download = False
 LIKES_URL = DEFAULT_LIKES_URL
 
+# Counts liked tracks by scrolling the SoundCloud likes page and collecting track links
 def count_likes_links(url):
     options = Options()
     options.add_argument("--headless")
@@ -39,6 +44,7 @@ def count_likes_links(url):
     driver.get(url)
     time.sleep(5)
 
+    # Scroll to load more content
     last_height = driver.execute_script("return document.body.scrollHeight")
     for _ in range(30):
         driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.END)
@@ -48,6 +54,7 @@ def count_likes_links(url):
             break
         last_height = new_height
 
+    # Collect all anchor tags with valid track URLs
     a_tags = driver.find_elements(By.XPATH, "//a[contains(@href, '/')]")
     track_links = set()
     for tag in a_tags:
@@ -60,6 +67,7 @@ def count_likes_links(url):
     driver.quit()
     return len(track_links)
 
+# Main download and filtering function
 def run_downloader(log_callback, update_stats_callback, update_progress_callback, update_errors_callback, update_chart_callback):
     global stop_download
     stop_download = False
@@ -72,6 +80,7 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
         os.makedirs(DOWNLOAD_DIR)
         log_callback(f"📁 Created directory: {DOWNLOAD_DIR}")
 
+    # Setup browser to fetch liked tracks
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--disable-gpu")
@@ -82,6 +91,7 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
     driver.get(LIKES_URL)
     time.sleep(5)
 
+    # Scroll to load all tracks
     log_callback("🔄 Scrolling page to load all likes...")
     last_height = driver.execute_script("return document.body.scrollHeight")
     for _ in range(30):
@@ -92,6 +102,7 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
             break
         last_height = new_height
 
+    # Extract all links from the page
     log_callback("🔎 Collecting track links...")
     a_tags = driver.find_elements(By.XPATH, "//a[contains(@href, '/')]")
     track_links = set()
@@ -104,11 +115,13 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
 
     driver.quit()
 
+    # Save all collected links
     with open(INPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(sorted(track_links)))
 
     log_callback(f"✅ Found {len(track_links)} links. Saved to {INPUT_FILE}")
 
+    # Filter out unwanted tracks
     filtered = []
     for link in track_links:
         lower_link = link.lower()
@@ -120,11 +133,13 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(sorted(filtered)))
 
+    # Display statistics
     total = len(filtered)
     update_stats_callback(total, 0)
     percent = (total / len(track_links)) * 100 if track_links else 0
     log_callback(f"\n📊 Statistics:\nTotal tracks: {len(track_links)}\nPassed filter: {total} ({percent:.1f}%)")
 
+    # Begin downloading filtered tracks
     log_callback("⬇️ Starting downloads...")
     downloaded = 0
     failed = []
@@ -164,12 +179,15 @@ def run_downloader(log_callback, update_stats_callback, update_progress_callback
                 update_errors_callback(len(failed))
                 log_callback(f"❌ Failed to download: {link} — {e}")
 
+    # Save failed downloads
     if failed:
         with open("failed_links.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(failed))
         log_callback(f"⚠️ Failed to download {len(failed)} tracks. List saved to failed_links.txt")
 
-# Добавим GUI и точку входа
+# Start the GUI
+# Initializes the Tkinter interface, sets up styles, and binds GUI elements to logic
+# Allows user to enter URL, start/stop downloads, and view logs/progress
 
 def start_gui():
     global LIKES_URL
@@ -177,6 +195,8 @@ def start_gui():
     root = tk.Tk()
     root.title("🎵 SoundCloud Likes Downloader")
     root.geometry("1000x900")
+
+    # Apply custom styling
     style = ttk.Style()
     root.tk_setPalette(background="#121212", foreground="#e0e0e0")
     style.theme_use("clam")
@@ -188,6 +208,7 @@ def start_gui():
     main_frame = ttk.Frame(root, padding=10)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
+    # URL entry
     url_entry_label = ttk.Label(main_frame, text="🔗 Likes Page URL:")
     url_entry_label.pack(anchor=tk.W, padx=5, pady=(5, 0))
 
@@ -195,19 +216,23 @@ def start_gui():
     url_entry.insert(0, DEFAULT_LIKES_URL)
     url_entry.pack(fill=tk.X, padx=5, pady=5)
 
+    # Text box for log messages
     text_box = tk.Text(main_frame, height=20, wrap=tk.WORD, bg="#1e1e1e", fg="#e0e0e0", 
                       insertbackground="#ffffff", font=("Consolas", 10), relief=tk.FLAT)
     text_box.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+    # Labels for stats and progress
     stats_label = ttk.Label(main_frame, text="📦 Filtered: 0 | 📥 Downloaded: 0 | ❌ Errors: 0")
     stats_label.pack(anchor=tk.W, pady=2)
 
     progress_label = ttk.Label(main_frame, text="🔄 Progress: 0/0 | 🚀 Speed: 0.00 tracks/min")
     progress_label.pack(anchor=tk.W, pady=2)
 
+    # Progress bar
     progress_bar = ttk.Progressbar(main_frame, orient="horizontal", mode="determinate")
     progress_bar.pack(fill=tk.X, padx=5, pady=(0, 10))
 
+    # Matplotlib chart for download progress
     fig, ax = plt.subplots(figsize=(6, 3))
     fig.patch.set_facecolor("#121212")
     ax.set_facecolor("#1e1e1e")
@@ -215,26 +240,31 @@ def start_gui():
     chart_widget = chart_canvas.get_tk_widget()
     chart_widget.pack(pady=10, fill=tk.BOTH, expand=True)
 
+    # Logging callback function
     def log_callback(message):
         text_box.insert(tk.END, message + "\n")
         with open("log.txt", "a", encoding="utf-8") as log_file:
             log_file.write(message + "\n")
         text_box.see(tk.END)
 
+    # Update the status stats label
     def update_stats(total, downloaded):
         stats_label.config(text=f"📦 Filtered: {total} | 📥 Downloaded: {downloaded} | ❌ Errors: 0")
 
+    # Update the progress bar and label
     def update_progress(current, total, speed):
         progress_label.config(text=f"🔄 Progress: {current}/{total} | 🚀 Speed: {speed:.2f} tracks/min")
         progress_bar["maximum"] = total
         progress_bar["value"] = current
 
+    # Update error count in stats label
     def update_errors(error_count):
         current = stats_label.cget("text")
         parts = current.split("|")
         if len(parts) == 3:
             stats_label.config(text=f"{parts[0].strip()} | {parts[1].strip()} | ❌ Errors: {error_count}")
 
+    # Update the matplotlib chart with progress data
     def update_chart(progress_data):
         ax.clear()
         ax.plot(progress_data, marker='o', linestyle='-', linewidth=2, color="#03dac6")
@@ -245,6 +275,7 @@ def start_gui():
         ax.grid(True, color="#444444")
         chart_canvas.draw()
 
+    # Start download thread
     def on_start():
         global LIKES_URL
         LIKES_URL = url_entry.get().strip()
@@ -253,10 +284,12 @@ def start_gui():
                          args=(log_callback, update_stats, update_progress, update_errors, update_chart), 
                          daemon=True).start()
 
+    # Stop the download
     def on_stop():
         global stop_download
         stop_download = True
 
+    # Count track links without downloading
     def on_count():
         url = url_entry.get().strip()
         text_box.delete("1.0", tk.END)
@@ -266,6 +299,7 @@ def start_gui():
             log_callback(f"❤️ Found {count} liked tracks on SoundCloud")
         threading.Thread(target=count_thread, daemon=True).start()
 
+    # Add buttons for interaction
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(pady=10)
 
@@ -280,5 +314,6 @@ def start_gui():
 
     root.mainloop()
 
+# Script entry point
 if __name__ == "__main__":
     start_gui()
